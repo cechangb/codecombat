@@ -93,6 +93,7 @@ module.exports = class CampaignView extends RootView
     if utils.getQueryVariable('hour_of_code')
       me.set('hourOfCode', true)
       me.patch()
+      # TODO: update pixel code for game-dev-hoc-2
       pixelCode = if @terrain is 'game-dev-hoc' then 'code_combat_gamedev' else 'code_combat'
       $('body').append($("<img src='https://code.org/api/hour/begin_#{pixelCode}.png' style='visibility: hidden;'>"))
     else if location.pathname is '/paypal/subscribe-callback'
@@ -105,10 +106,6 @@ module.exports = class CampaignView extends RootView
         me.fetch(cache: false, success: => @render?())
       .catch (err) =>
         console.error(err)
-
-    # HoC: Fake us up a "mode" for HeroVictoryModal to return hero without levels realizing they're in a copycat campaign, or clear it if we started playing.
-    shouldReturnToGameDevHoc = @terrain is 'game-dev-hoc'
-    storage.save 'should-return-to-game-dev-hoc', shouldReturnToGameDevHoc
 
     if window.serverConfig.picoCTF
       @supermodel.addRequestResource(url: '/picoctf/problems', success: (@picoCTFProblems) =>).load()
@@ -266,6 +263,9 @@ module.exports = class CampaignView extends RootView
     levelPlayCountsRequest.load()
 
   onLoaded: ->
+    # HoC: Fake us up a "mode" for HeroVictoryModal to return hero without levels realizing they're in a copycat campaign, or clear it if we started playing.
+    application.setHocCampaign(if @campaign.get('type') is 'hoc' then @campaign.get('slug') else '')
+
     return if @fullyRendered
     @fullyRendered = true
     @render()
@@ -479,7 +479,7 @@ module.exports = class CampaignView extends RootView
       return @promptForSubscription campaignSlug, 'premium campaign visited'
 
   promptForSignup: ->
-    return if features.noAuth or @terrain is 'game-dev-hoc'
+    return if features.noAuth or @campaign.get('type') is 'hoc'
 
     @endHighlight()
     authModal = new CreateAccountModal supermodel: @supermodel
@@ -487,7 +487,7 @@ module.exports = class CampaignView extends RootView
     @openModalView authModal
 
   promptForSubscription: (slug, label) ->
-    return console.log('Game dev HoC does not encourage subscribing.') if @terrain is 'game-dev-hoc'
+    return console.log('Game dev HoC does not encourage subscribing.') if @campaign.get('type') is 'hoc'
     @endHighlight()
     @openModalView new SubscribeModal()
     # TODO: Added levelID on 2/9/16. Remove level property and associated AnalyticsLogEvent 'properties.level' index later.
@@ -519,7 +519,7 @@ module.exports = class CampaignView extends RootView
       level.disabled = false if me.isInGodMode()
 
       level.color = 'rgb(255, 80, 60)'
-      unless @course? or @terrain is 'game-dev-hoc'
+      unless @course? or @campaign.get('type') is 'hoc'
         level.color = 'rgb(80, 130, 200)' if level.requiresSubscription and not features.codePlay
         level.color = 'rgb(200, 80, 200)' if level.adventurer
 
@@ -547,7 +547,7 @@ module.exports = class CampaignView extends RootView
           """
           level.color = 'rgb(80, 130, 200)' if problem.solved
 
-      level.hidden = level.locked and @terrain isnt 'game-dev-hoc'
+      level.hidden = level.locked and @campaign.get('type') isnt 'hoc'
       if level.concepts?.length
         level.displayConcepts = level.concepts
         maxConcepts = 6
@@ -562,7 +562,7 @@ module.exports = class CampaignView extends RootView
   countLevels: (orderedLevels) ->
     count = total: 0, completed: 0
 
-    if @campaign?.get('slug') is 'game-dev-hoc'
+    if @campaign?.get('type') is 'hoc'
       # HoC: Just order left-to-right instead of looking at unlocks, which we don't use for this copycat campaign
       orderedLevels = _.sortBy orderedLevels, (level) -> level.position.x
       count.completed++ for level in orderedLevels when @levelStatusMap[level.slug] is 'complete'
@@ -592,14 +592,14 @@ module.exports = class CampaignView extends RootView
     dontPointTo = ['lost-viking', 'kithgard-mastery']  # Challenge levels we don't want most players bashing heads against
     subscriptionPrompts = [{slug: 'boom-and-bust', unless: 'defense-of-plainswood'}]
 
-    if @campaign?.get('slug') is 'game-dev-hoc'
+    if @campaign?.get('type') is 'hoc'
       # HoC: Just order left-to-right instead of looking at unlocks, which we don't use for this copycat campaign
       orderedLevels = _.sortBy orderedLevels, (level) -> level.position.x
       for level in orderedLevels
         if @levelStatusMap[level.slug] isnt 'complete'
           level.next = true
           # Unlock and re-annotate this level
-          # May not be unlocked/awarded due to different game-dev-hoc progression using mostly shared levels
+          # May not be unlocked/awarded due to different HoC progression using mostly shared levels
           level.locked = false
           level.hidden = level.locked
           level.disabled = false
@@ -695,7 +695,7 @@ module.exports = class CampaignView extends RootView
 
   testParticles: ->
     return unless @campaign?.loaded and $.browser.chrome  # Sometimes this breaks in non-Chrome browsers, according to A/B tests.
-    return if @terrain is 'game-dev-hoc'
+    return if @campaign.get('type') is 'hoc'
     @particleMan ?= new ParticleMan()
     @particleMan.removeEmitters()
     @particleMan.attach @$el.find('.map')
@@ -817,7 +817,7 @@ module.exports = class CampaignView extends RootView
       level.adventurer
       @levelStatusMap[level.slug]
       (features.codePlay and codePlay.canPlay(level.slug))
-      @terrain is 'game-dev-hoc'
+      @campaign.get('type') is 'hoc'
     ])
     if requiresSubscription and not canPlayAnyway
       @promptForSubscription levelSlug, 'map level clicked'
