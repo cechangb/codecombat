@@ -264,7 +264,7 @@ module.exports = class CampaignView extends RootView
 
   onLoaded: ->
     # HoC: Fake us up a "mode" for HeroVictoryModal to return hero without levels realizing they're in a copycat campaign, or clear it if we started playing.
-    application.setHocCampaign(if @campaign.get('type') is 'hoc' then @campaign.get('slug') else '')
+    application.setHocCampaign(if @campaign?.get('type') is 'hoc' then @campaign.get('slug') else '')
 
     return if @fullyRendered
     @fullyRendered = true
@@ -516,7 +516,7 @@ module.exports = class CampaignView extends RootView
       level.disabled = false if me.isInGodMode()
 
       level.color = 'rgb(255, 80, 60)'
-      unless @course? or @campaign.get('type') is 'hoc'
+      unless @course? or @campaign?.get('type') is 'hoc'
         level.color = 'rgb(80, 130, 200)' if level.requiresSubscription and not features.codePlay
         level.color = 'rgb(200, 80, 200)' if level.adventurer
 
@@ -544,7 +544,7 @@ module.exports = class CampaignView extends RootView
           """
           level.color = 'rgb(80, 130, 200)' if problem.solved
 
-      level.hidden = level.locked and @campaign.get('type') isnt 'hoc'
+      level.hidden = level.locked and @campaign?.get('type') isnt 'hoc'
       if level.concepts?.length
         level.displayConcepts = level.concepts
         maxConcepts = 6
