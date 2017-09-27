@@ -277,7 +277,7 @@ module.exports = class CampaignView extends RootView
         if me.get('anonymous') and me.get('lastLevel') is 'true-names' and me.level() < 5
           @openModalView new CodePlayCreateAccountModal()
       else if me.get('anonymous') and me.get('lastLevel') is 'shadow-guard' and me.level() < 4 and not features.noAuth
-        @openModalView new CreateAccountModal supermodel: @supermodel, showSignupRationale: true
+        @promptForSignup()
       else if me.get('name') and me.get('lastLevel') in ['forgetful-gemsmith', 'signs-and-portents'] and
       me.level() < 5 and not (me.get('ageRange') in ['18-24', '25-34', '35-44', '45-100']) and
       not storage.load('sent-parent-email') and not me.isPremium()
@@ -480,11 +480,8 @@ module.exports = class CampaignView extends RootView
 
   promptForSignup: ->
     return if features.noAuth or @campaign.get('type') is 'hoc'
-
     @endHighlight()
-    authModal = new CreateAccountModal supermodel: @supermodel
-    authModal.mode = 'signup'
-    @openModalView authModal
+    @openModalView(new CreateAccountModal(supermodel: @supermodel))
 
   promptForSubscription: (slug, label) ->
     return console.log('Game dev HoC does not encourage subscribing.') if @campaign.get('type') is 'hoc'
