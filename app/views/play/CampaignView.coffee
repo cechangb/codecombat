@@ -479,6 +479,7 @@ module.exports = class CampaignView extends RootView
       return @promptForSubscription campaignSlug, 'premium campaign visited'
 
   promptForSignup: ->
+    return if @terrain and 'hoc' in @terrain
     return if features.noAuth or @campaign.get('type') is 'hoc'
     @endHighlight()
     @openModalView(new CreateAccountModal(supermodel: @supermodel))
@@ -492,6 +493,7 @@ module.exports = class CampaignView extends RootView
 
   isPremiumCampaign: (slug) ->
     slug ||= window.location.pathname.split('/')[2]
+    return false if 'hoc' in slug
     /campaign-(game|web)-dev-\d/.test slug
 
   showAds: ->

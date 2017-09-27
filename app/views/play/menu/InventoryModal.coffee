@@ -49,6 +49,10 @@ module.exports = class InventoryModal extends ModalView
   #- Setup
 
   initialize: (options) ->
+    if application.getHocCampaign() and me.get('earned')?.items
+      unless '5744e3683af6bf590cd27371' in me.get('earned').items
+        me.get('earned').items.push('5744e3683af6bf590cd27371') # Allow HoC players to access the cat
+    
     @onScrollUnequipped = _.throttle(_.bind(@onScrollUnequipped, @), 200)
     super(arguments...)
     @items = new CocoCollection([], {model: ThangType})
@@ -149,7 +153,7 @@ module.exports = class InventoryModal extends ModalView
     else if restricted
       @itemGroups.restrictedItems.add(item)
       item.classes.push 'restricted'
-    else if subscriber
+    else if subscriber and not application.getHocCampaign() # allow HoC players to equip pets
       @itemGroups.subscriberItems.add(item)
       item.classes.push 'subscriber'
     else
