@@ -475,7 +475,6 @@ module.exports = class CampaignView extends RootView
     if @getQueryVariable('signup') and not me.get('email')
       return @promptForSignup()
     if not me.isPremium() and (@isPremiumCampaign() or (@options.worldComplete and not features.noAuth and not me.get('hourOfCode')))
-      return if @get('hourOfCode')
       if not me.get('email')
         return @promptForSignup()
       campaignSlug = window.location.pathname.split('/')[2]
