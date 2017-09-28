@@ -49,9 +49,20 @@ module.exports = class InventoryModal extends ModalView
   #- Setup
 
   initialize: (options) ->
-    if application.getHocCampaign() and me.get('earned')?.items
-      unless '5744e3683af6bf590cd27371' in me.get('earned').items
-        me.get('earned').items.push('5744e3683af6bf590cd27371') # Allow HoC players to access the cat
+    if (application.getHocCampaign() is 'game-dev-hoc-2')
+      if !me.get('earned')
+        me.set('earned', {})
+      if !me.get('earned').items
+        me.attributes.earned.items = []
+      baseItems = [
+        '53e2384453457600003e3f07' # leather boots
+        '53e218d853457600003e3ebe' # simple sword
+        '53e22aa153457600003e3ef5' # wooden shield
+        '5744e3683af6bf590cd27371' # cougar
+      ]
+      for item in baseItems
+        unless item in me.get('earned').items
+          me.get('earned').items.push(item) # Allow HoC players to access the cat
     
     @onScrollUnequipped = _.throttle(_.bind(@onScrollUnequipped, @), 200)
     super(arguments...)
