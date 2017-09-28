@@ -93,8 +93,10 @@ module.exports = class CampaignView extends RootView
     if utils.getQueryVariable('hour_of_code')
       me.set('hourOfCode', true)
       me.patch()
-      # TODO: update pixel code for game-dev-hoc-2
-      pixelCode = if @terrain is 'game-dev-hoc' then 'code_combat_gamedev' else 'code_combat'
+      pixelCode = switch @terrain
+        when 'game-dev-hoc' then 'code_combat_gamedev'
+        when 'game-dev-hoc-2' then 'code_combat_gamedev2'
+        else 'code_combat'
       $('body').append($("<img src='https://code.org/api/hour/begin_#{pixelCode}.png' style='visibility: hidden;'>"))
     else if location.pathname is '/paypal/subscribe-callback'
       @payPalToken = utils.getQueryVariable('token')
