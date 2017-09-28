@@ -472,7 +472,8 @@ module.exports = class CampaignView extends RootView
     super()
     if @getQueryVariable('signup') and not me.get('email')
       return @promptForSignup()
-    if not me.isPremium() and (@isPremiumCampaign() or (@options.worldComplete and not features.noAuth))
+    if not me.isPremium() and (@isPremiumCampaign() or (@options.worldComplete and not features.noAuth and not me.get('hourOfCode')))
+      return if @get('hourOfCode')
       if not me.get('email')
         return @promptForSignup()
       campaignSlug = window.location.pathname.split('/')[2]
@@ -480,12 +481,12 @@ module.exports = class CampaignView extends RootView
 
   promptForSignup: ->
     return if @terrain and 'hoc' in @terrain
-    return if features.noAuth or @campaign.get('type') is 'hoc'
+    return if features.noAuth or @campaign?.get('type') is 'hoc'
     @endHighlight()
     @openModalView(new CreateAccountModal(supermodel: @supermodel))
 
   promptForSubscription: (slug, label) ->
-    return console.log('Game dev HoC does not encourage subscribing.') if @campaign.get('type') is 'hoc'
+    return console.log('Game dev HoC does not encourage subscribing.') if @campaign?.get('type') is 'hoc'
     @endHighlight()
     @openModalView new SubscribeModal()
     # TODO: Added levelID on 2/9/16. Remove level property and associated AnalyticsLogEvent 'properties.level' index later.
@@ -493,6 +494,7 @@ module.exports = class CampaignView extends RootView
 
   isPremiumCampaign: (slug) ->
     slug ||= window.location.pathname.split('/')[2]
+    return unless slug
     return false if 'hoc' in slug
     /campaign-(game|web)-dev-\d/.test slug
 
